@@ -1,0 +1,40 @@
+# config/red_cnn.yaml
+
+network:
+  type: red_cnn
+
+preprocess:
+  scale: 4
+  norm_range_min: -0.000625
+  norm_range_max: 0.0265
+  trunc_min: -160.0
+  trunc_max: 240.0
+
+train: 
+  lr: 1.0e-5
+  criterion: mse
+  optimizer:
+    type: adam
+    weight_decay: 1.0e-6
+  scheduler:
+    type: step
+    step_size: 10
+    gamma: 0.5
+  earlystopping:
+    enabled: true
+    patience: 10
+    min_delta: 1.0e-3
+    metric: psnr
+    mode: max
+  num_epochs: 10
+  batch_size: 4
+  patch_size: 256
+  save_iters: 20
+  val_iters: 20
+  record_iters: 20
+  metrics: [rmse, psnr, ssim]
+
+instrument:
+  device: cuda
+  num_workers: 1
+  multi_gpu: false
