@@ -37,5 +37,5 @@ def evaluate(args: dict):
 
     # Solver
     solver = RedCNNSolver(config=train_config, model=model,
-                          eval_loader=eval_loader, val_logger=eval_logger)
+                          eval_loader=eval_loader, eval_logger=eval_logger)
     solver.evaluate()
