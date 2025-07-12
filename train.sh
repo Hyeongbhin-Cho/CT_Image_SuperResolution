@@ -6,4 +6,4 @@ python main.py \
     --save_path "save" \
     --result_fig \
     --workframe red_cnn \
-    --version 1.0
+    --version 2.0

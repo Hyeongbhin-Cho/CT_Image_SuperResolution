@@ -3,15 +3,9 @@
 network:
   type: red_cnn
 
-preprocess:
-  scale: 4
-  norm_range_min: -0.000625
-  norm_range_max: 0.0265
-  trunc_min: -160.0
-  trunc_max: 240.0
-
 train: 
   lr: 1.0e-5
+  num_epochs: 10
   criterion: mse
   optimizer:
     type: adam
@@ -26,15 +20,74 @@ train:
     min_delta: 1.0e-3
     metric: psnr
     mode: max
-  num_epochs: 10
-  batch_size: 4
-  patch_size: 256
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, randomcrop, randomflip, randomrotate90, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      randomcrop:
+        patch_size: 256
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
   save_iters: 20
   val_iters: 20
   record_iters: 20
   metrics: [rmse, psnr, ssim]
 
-instrument:
-  device: cuda
-  num_workers: 1
+validate:
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, randomcrop, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      randomcrop:
+        patch_size: 256
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+
+evaluate:
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+  metrics: [rmse, psnr, ssim]
+
+visualize:
+  data_loader:
+    batch_size: 1
+    num_workers: 1
+    shuffle: false
+    transform:
+      type: [interpolation, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+
+device:
+  type: cuda
   multi_gpu: false

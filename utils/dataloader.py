@@ -2,8 +2,6 @@
 import os
 import h5py
 import numpy as np
-
-import torch
 from torch.utils.data import Dataset, DataLoader
 
 from utils.transforms import *
@@ -57,16 +55,3 @@ class SrDataset(Dataset):
             data = self.transform(data)
 
         return data
-
-        
-def get_loader(mode,
-               data_path,
-               transform=None,
-               batch_size=4,
-               num_workers=1,
-               shuffle=True):
-    
-    dataset = SrDataset(data_path, transform=transform, mode=mode)
-    data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-    print(f'{mode}_dataset loaded.')
-    return data_loader

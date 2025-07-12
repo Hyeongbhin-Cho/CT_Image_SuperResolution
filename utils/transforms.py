@@ -24,9 +24,21 @@ class ToTensor(object):
         
         return data
     
+    
+class HounsfieldUnit(object):
+    def __init__(self, water_coefficient=0.0192):
+        self.water_coefficient = water_coefficient
+        
+    def __call__(self, data):
+        for key, value in data.items():
+            if key != 'mask':
+                data[key] = 1000 * (value - self.water_coefficient) / self.water_coefficient
+
+        return data
+
 
 class Normalization(object):
-    def __init__(self, clip_min=-0.000625, clip_max=0.0265):
+    def __init__(self, clip_min=-1024, clip_max=3071):
         self.clip_min = clip_min
         self.clip_max = clip_max
 
@@ -37,23 +49,7 @@ class Normalization(object):
                 data[key] = (value - self.clip_min) / (self.clip_max - self.clip_min)
 
         return data
-    
-    
-class Picturization(object):
-    def __init__(self, clip_min=-0.000625, clip_max=0.0265):
-        self.clip_min = clip_min
-        self.clip_max = clip_max
 
-    def __call__(self, data):
-        for key, value in data.items():
-            if key != 'mask':
-                value = np.clip(value, self.clip_min, self.clip_max)
-                value = (value - self.clip_min) / (self.clip_max - self.clip_min)
-                value = (255 * value).astype(np.uint8)
-                data[key] = value
-
-        return data
-    
 
 class RandomFlip(object):
     def __call__(self, data):

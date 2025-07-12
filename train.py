@@ -2,8 +2,7 @@
 import os
 from networks import get_model
 from solver import RedCNNSolver
-from utils import get_loader, get_logger
-from utils.transforms import *
+from utils import get_loader, get_logger, get_transforms
 
 import yaml
 
@@ -25,22 +24,22 @@ def train(args: dict):
     val_logger = get_logger(log_dir=log_path, name='val')
     
     # Data loader
+    train_loader_config = train_config["train"]["data_loader"]
     train_loader = get_loader(mode='train',
-                            data_path=train_config['data_path'],
-                            transform=[Interpolation(scale=train_config['preprocess']['scale']),
-                                       RandomCrop(train_config['train']['patch_size']),
-                                       RandomFlip(),
-                                       RandomRotate90(),
-                                       Normalization(clip_min=train_config['preprocess']['norm_range_min'],
-                                                     clip_max=train_config['preprocess']['norm_range_max']),
-                                       ToTensor()])
+                              data_path=train_config['data_path'],
+                              transform=get_transforms(config=train_loader_config.get('transform', {})),
+                              batch_size=train_loader_config.get('batch_size', 16),
+                              num_workers=train_loader_config.get('num_workers', 0),
+                              shuffle=train_loader_config.get('shuffle', True))
+
+    val_loader_config = train_config['validate']['data_loader']
     val_loader = get_loader(mode='val',
-                          data_path=train_config['data_path'],
-                          transform=[Interpolation(scale=train_config['preprocess']['scale']),
-                                     RandomCrop(train_config['train']['patch_size']),
-                                     Normalization(clip_min=train_config['preprocess']['norm_range_min'],
-                                                   clip_max=train_config['preprocess']['norm_range_max']),
-                                     ToTensor()])
+                            data_path=train_config['data_path'],
+                            transform=get_transforms(config=val_loader_config.get('transform', {})),
+                            batch_size=val_loader_config.get('batch_size', 16),
+                            num_workers=val_loader_config.get('num_workers', 0),
+                            shuffle=val_loader_config.get('shuffle', True))
+    
 
     # Build model
     ModelClass = get_model(train_config['network']['type'])
