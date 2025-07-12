@@ -12,7 +12,7 @@ def make_directory(path, exist_ok=True):
     if not os.path.exists(path):
         log_path = os.path.join(path, 'log')
         fig_path = os.path.join(path, 'fig')
-        img_path = os.path.join(path, 'image')
+        img_path = os.path.join(path, 'img')
     
         os.makedirs(log_path, exist_ok=exist_ok)
         os.makedirs(fig_path, exist_ok=exist_ok)

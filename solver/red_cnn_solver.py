@@ -189,12 +189,12 @@ class RedCNNSolver(BaseSolver):
         
         # Eval Logger
         log = f"[Eval] Loss: {eval_loss_avg:.6f}"
+        log += " [LR]"
         for k, v in x_measure_avg.items():
-            log += " [LR]"
             log += f" {k.upper()}: {v:.4f}"
             
+        log += " [SR]"
         for k, v in pred_measure_avg.items():
-            log += " [SR]"
             log += f" {k.upper()}: {v:.4f}"
             
         tqdm.write(log)
