@@ -37,5 +37,5 @@ class RED_CNN(nn.Module):
         out = self.tconv4(self.relu(out))
         out = self.tconv5(self.relu(out))
         out += residual_1
-        out = self.relu(out)
+        # out = self.relu(out)
         return out

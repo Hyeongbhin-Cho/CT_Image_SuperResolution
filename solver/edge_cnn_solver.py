@@ -276,16 +276,13 @@ class EdgeCNN(BaseSolver):
             y = data['hr'].to(self.device)
             pred = self.model(x)
             
-            edge_x = self.sobel_magnitude(x)
-            edge_y = self.sobel_magnitude(y)
-            edge_pred = self.sobel_magnitude(pred)
+            edge_x = self.sobel_magnitude(x) / 1.5
+            edge_y = self.sobel_magnitude(y) / 1.5
+            edge_pred = self.sobel_magnitude(pred) / 1.5
 
             for name, img_tensor in zip(["LR", "HR", "SR", "LR_edge", "HR_edge", "SR_edge"], [x[0], y[0], pred[0], edge_x[0], edge_y[0], edge_pred[0]]):
                 img = img_tensor.detach().cpu().numpy()
-                if img.shape[-1] == 1:
-                    img = img.squeeze(-1)
-                else:
-                    img = np.transpose(img, (1, 2, 0))
+                img = np.transpose(img, (1, 2, 0))
                 img = np.clip(img, 0, 1)
                 img = (img * 255).astype(np.uint8)
                 cv2.imwrite(os.path.join(save_dir, f"{name}_{i}.png"), img)

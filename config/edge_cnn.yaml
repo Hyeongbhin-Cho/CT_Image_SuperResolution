@@ -41,7 +41,7 @@ train:
   metrics: [rmse, psnr, ssim]
   edge:
     criterion: mse
-    magnitude_threshold: 30
+    magnitude_threshold: -1
     gamma: 0.5
 
 validate:
