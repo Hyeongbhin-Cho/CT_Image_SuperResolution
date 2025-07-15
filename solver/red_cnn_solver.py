@@ -23,6 +23,8 @@ class RedCNNSolver(BaseSolver):
                          val_loader=val_loader, val_logger=val_logger,
                          vs_loader=vs_loader)
         
+        print("RED CNN solver is loaded.")
+        
     def train(self):
         assert self.train_loader is not None, "RedCNNSolver need train loader. RedCNNSolver(..., train_loader=<here>)"
         

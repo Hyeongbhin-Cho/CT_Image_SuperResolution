@@ -3,15 +3,17 @@ import torch.nn as nn
 
 # Models
 from .red_cnn import RED_CNN
+from .sr_cnn import SR_CNN
 
 # Get model
 def get_model(model: str) -> type[nn.Module]:
-    models = {
-        'red_cnn': RED_CNN
+    models_map = {
+        'red_cnn': RED_CNN,
+        'sr_cnn': SR_CNN
     }
 
     model = model.lower()
-    if model not in models:
-        raise ValueError(f"Invalid model '{model}'. Available: {list(models.keys())}")
+    if model not in models_map:
+        raise ValueError(f"Invalid model '{model}'. Available: {list(models_map.keys())}")
 
-    return models[model]
+    return models_map[model]

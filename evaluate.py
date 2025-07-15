@@ -1,7 +1,7 @@
 # eval.py
 import os
 from networks import get_model
-from solver import RedCNNSolver
+from solver import get_solver
 from utils import get_loader, get_logger, get_transforms
 
 import yaml
@@ -36,6 +36,7 @@ def evaluate(args: dict):
     model = ModelClass()
 
     # Solver
-    solver = RedCNNSolver(config=eval_config, model=model,
+    Solver = get_solver(eval_config["workframe"])
+    solver = Solver(config=eval_config, model=model,
                           eval_loader=eval_loader, eval_logger=eval_logger)
     solver.evaluate()

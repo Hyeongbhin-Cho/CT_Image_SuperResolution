@@ -106,6 +106,31 @@ class Interpolation(object):
 class RandomRotate90(object):
     def __call__(self, data):
         k = np.random.choice([0, 1, 2, 3])  # 0도, 90도, 180도, 270도
-        for key in data:
-            data[key] = np.rot90(data[key], k).copy()
+        for key, value in data.items():
+            data[key] = np.rot90(value, k).copy()
         return data
+    
+    
+class SobelGradientMagnitude(object):
+    def __init__(self, threshold):
+        self.threshold = threshold
+        
+    def __call__(self, data):
+        edges = {}
+        for key, value in data.items():
+            dx = cv2.Sobel(value, cv2.CV_32F, 1, 0, ksize=3)
+            dy = cv2.Sobel(value, cv2.CV_32F, 0, 1, ksize=3)
+            magnitude = cv2.magnitude(dx, dy)
+            
+            if self.threshold > 0:
+                magnitude = np.where(magnitude > self.threshold, magnitude, 0)
+                
+            if magnitude.ndim == 2:
+                magnitude = magnitude[:, :, np.newaxis]
+                
+            edges[f"{key}_edge"] = magnitude
+            
+        data.update(edges)
+        
+        return data
+        

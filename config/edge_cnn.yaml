@@ -1,0 +1,97 @@
+# config/edge_cnn.yaml
+
+network:
+  type: red_cnn
+
+train: 
+  lr: 1.0e-5
+  num_epochs: 10
+  criterion: mse
+  optimizer:
+    type: adam
+    weight_decay: 1.0e-6
+  scheduler:
+    type: step
+    step_size: 10
+    gamma: 0.5
+  earlystopping:
+    enabled: true
+    patience: 10
+    min_delta: 1.0e-3
+    metric: psnr
+    mode: max
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, randomcrop, randomflip, randomrotate90, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      randomcrop:
+        patch_size: 256
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+  save_iters: 20
+  val_iters: 20
+  record_iters: 20
+  metrics: [rmse, psnr, ssim]
+  edge:
+    criterion: mse
+    magnitude_threshold: 30
+    gamma: 0.5
+
+validate:
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, randomcrop, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      randomcrop:
+        patch_size: 256
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+
+evaluate:
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+  metrics: [rmse, psnr, ssim]
+
+visualize:
+  data_loader:
+    batch_size: 1
+    num_workers: 1
+    shuffle: false
+    transform:
+      type: [interpolation, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+
+device:
+  type: cuda
+  multi_gpu: false

@@ -18,7 +18,7 @@ def get_loader(mode,
     }
     
     if mode not in mode_map:
-        raise ValueError(f'Mode {mode} is not valid, mode must be one of tran, val and eval')
+        raise ValueError(f'Mode {mode} is not valid, mode must be one of train, val and eval')
     
     dataset = SrDataset(data_path, transform=transform, mode=mode)
     data_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
@@ -35,7 +35,8 @@ from .transforms import (
     RandomFlip,
     RandomCrop,
     Interpolation,
-    RandomRotate90
+    RandomRotate90,
+    SobelGradientMagnitude
 )
 
 def get_transforms(config):
@@ -46,7 +47,8 @@ def get_transforms(config):
         'randomcrop': RandomCrop,
         'randomflip': RandomFlip,
         'interpolation': Interpolation,
-        'randomrotate90': RandomRotate90 
+        'randomrotate90': RandomRotate90,
+        'sobelgradientmagnitude': SobelGradientMagnitude
     }
     
     transform_type = config.get('type', ['totensor'])

@@ -6,3 +6,6 @@ save/
 
 # Vessl
 vessl.yaml
+
+# Utils
+analysis.py

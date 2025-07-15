@@ -1,7 +1,7 @@
 # visualize.py
 
 from networks import get_model
-from solver import RedCNNSolver
+from solver import get_solver
 from utils import get_loader, get_transforms
 
 import yaml
@@ -32,5 +32,6 @@ def visualize(args: dict):
     model = ModelClass()
 
     # Solver
-    solver = RedCNNSolver(config=vs_config, model=model, vs_loader=vs_loader)
+    Solver = get_solver(vs_config["workframe"])
+    solver = Solver(config=vs_config, model=model, vs_loader=vs_loader)
     solver.visualize()

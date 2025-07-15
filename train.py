@@ -1,7 +1,7 @@
 # train.py
 import os
 from networks import get_model
-from solver import RedCNNSolver
+from solver import get_solver
 from utils import get_loader, get_logger, get_transforms
 
 import yaml
@@ -46,7 +46,8 @@ def train(args: dict):
     model = ModelClass()
 
     # Solver
-    solver = RedCNNSolver(config=train_config, model=model,
+    Solver = get_solver(train_config["workframe"])
+    solver = Solver(config=train_config, model=model,
                           train_loader=train_loader, train_logger=train_logger,
                           val_loader=val_loader, val_logger=val_logger)
     solver.train()
