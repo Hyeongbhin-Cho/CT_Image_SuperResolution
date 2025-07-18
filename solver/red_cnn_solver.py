@@ -17,7 +17,7 @@ class RedCNNSolver(BaseSolver):
                  eval_loader: DataLoader = None, eval_logger: logging.Logger = None,
                  val_loader: DataLoader = None, val_logger:logging.Logger = None,
                  vs_loader: DataLoader = None):
-        super().__init__(config=config, model=model,
+        super(RedCNNSolver, self).__init__(config=config, model=model,
                          train_loader=train_loader, train_logger=train_logger,
                          eval_loader=eval_loader, eval_logger=eval_logger,
                          val_loader=val_loader, val_logger=val_logger,

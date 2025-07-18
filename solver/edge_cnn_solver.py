@@ -13,13 +13,13 @@ import cv2
 from .base_solver import BaseSolver
 from utils.measure import compute_measure
 
-class EdgeCNN(BaseSolver):
+class EdgeCNNSolver(BaseSolver):
     def __init__(self, config:dict, model: nn.Module,
                  train_loader: DataLoader = None, train_logger: logging.Logger = None,
                  eval_loader: DataLoader = None, eval_logger: logging.Logger = None,
                  val_loader: DataLoader = None, val_logger:logging.Logger = None,
                  vs_loader: DataLoader = None):
-        super().__init__(config=config, model=model,
+        super(EdgeCNNSolver, self).__init__(config=config, model=model,
                          train_loader=train_loader, train_logger=train_logger,
                          eval_loader=eval_loader, eval_logger=eval_logger,
                          val_loader=val_loader, val_logger=val_logger,
@@ -81,13 +81,24 @@ class EdgeCNN(BaseSolver):
                         assert self.val_loader is not None, "EdgeCNNSolver need val loader. EdgeCNNSolver(..., val_loader=<here>)"  
                         val_loss_avg, val_measures = self.validate()
                         
+                        measure = val_measures[self.earlystopping_metric]
+                        
+                        filename = os.path.join(self.save_path, 'best.pt')
+                        if self.earlystopping_mode == 'min' and measure < self.best_value:
+                            self.best_value = measure
+                            self.save_model(filename=filename)        
+                        elif self.earlystopping_mode == 'max' and measure > self.best_value:
+                            self.best_value = measure
+                            self.save_model(filename=filename)
+                                                    
                         # Early Stopping
-                        if self.earlystopping.step(val_measures[self.earlystopping_metric]):
+                        if self.earlystopping.step(measure):
                             print("Earlystopping")
                             if self.train_logger:
                                 self.train_logger.info("Earlystopping")
                             train_finish = True
                             break
+                        
                         
                     # To GPU
                     train_x = data['lr'].to(self.device)

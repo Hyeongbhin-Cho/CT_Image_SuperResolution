@@ -1,6 +1,10 @@
 # networks/red_cnn.py
 import torch.nn as nn
-
+"""
+Total params: 1,848,865
+Trainable params: 1,848,865
+Non-trainable params: 0
+"""
 class RED_CNN(nn.Module):
     def __init__(self, out_ch=96):
         super(RED_CNN, self).__init__()
@@ -16,26 +20,26 @@ class RED_CNN(nn.Module):
         self.tconv4 = nn.ConvTranspose2d(out_ch, out_ch, kernel_size=5, stride=1, padding=0)
         self.tconv5 = nn.ConvTranspose2d(out_ch, 1, kernel_size=5, stride=1, padding=0)
 
-        self.relu = nn.ReLU()
+        self.act = nn.ReLU()
 
     def forward(self, x):
         # encoder
         residual_1 = x
-        out = self.relu(self.conv1(x))
-        out = self.relu(self.conv2(out))
+        out = self.act(self.conv1(x))
+        out = self.act(self.conv2(out))
         residual_2 = out
-        out = self.relu(self.conv3(out))
-        out = self.relu(self.conv4(out))
+        out = self.act(self.conv3(out))
+        out = self.act(self.conv4(out))
         residual_3 = out
-        out = self.relu(self.conv5(out))
+        out = self.act(self.conv5(out))
         # decoder
         out = self.tconv1(out)
         out += residual_3
-        out = self.tconv2(self.relu(out))
-        out = self.tconv3(self.relu(out))
+        out = self.tconv2(self.act(out))
+        out = self.tconv3(self.act(out))
         out += residual_2
-        out = self.tconv4(self.relu(out))
-        out = self.tconv5(self.relu(out))
+        out = self.tconv4(self.act(out))
+        out = self.tconv5(self.act(out))
         out += residual_1
-        # out = self.relu(out)
+        out = self.act(out)
         return out

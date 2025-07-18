@@ -2,13 +2,13 @@
 from .base_solver import BaseSolver
 from .red_cnn_solver import RedCNNSolver 
 from .sr_cnn_solver import SRCNNSolver
-from .edge_cnn_solver import EdgeCNN
+from .edge_cnn_solver import EdgeCNNSolver
 
 def get_solver(name: str) -> type[BaseSolver]:
     solvers = {
         'red_cnn': RedCNNSolver,
         'sr_cnn': SRCNNSolver,
-        'edge_cnn': EdgeCNN
+        'edge_cnn': EdgeCNNSolver
     }
 
     name = name.lower()

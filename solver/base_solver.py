@@ -96,7 +96,9 @@ class BaseSolver(ABC):
         
         # Early Stopping
         earlystopping_configs = config['train'].get('earlystopping', {})
-        
+        self.earlystopping_mode = earlystopping_configs.get('mode', 'min')
+        self.best_value = float('inf') if self.earlystopping_mode =='min' else -float('inf')
+  
         self.earlystopping = EarlyStopping(patience=earlystopping_configs.get('patience', 10),
                                            min_delta=earlystopping_configs.get('min_delta', 0),
                                            mode=earlystopping_configs.get('mode', 'min'),
@@ -104,6 +106,9 @@ class BaseSolver(ABC):
         self.earlystopping_metric = earlystopping_configs.get('metric', 'loss')
         if self.earlystopping_metric != 'loss' and self.earlystopping_metric not in self.metrics:
             raise ValueError(f"Metric '{self.earlystopping_metric}' not found in validation metrics")
+        
+        
+        
         
     def save_model(self, filename: str=None):
         filename = filename or os.path.join(self.save_path, 'latest.pt')
