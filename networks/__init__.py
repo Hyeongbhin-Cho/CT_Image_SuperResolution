@@ -5,13 +5,15 @@ import torch.nn as nn
 from .red_cnn import RED_CNN
 from .sr_cnn import SR_CNN
 from .unet import UNet
+from .dual_unet import DualUNet
 
 # Get model
 def get_model(model: str) -> type[nn.Module]:
     models_map = {
         'red_cnn': RED_CNN,
         'sr_cnn': SR_CNN,
-        'unet': UNet
+        'unet': UNet,
+        'dual_unet': DualUNet
     }
 
     model = model.lower()

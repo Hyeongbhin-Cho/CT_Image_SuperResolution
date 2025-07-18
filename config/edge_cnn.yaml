@@ -1,7 +1,7 @@
 # config/edge_cnn.yaml
 
 network:
-  type: unet
+  type: red_cnn
 
 train: 
   lr: 1.0e-5
@@ -42,7 +42,7 @@ train:
   edge:
     criterion: mse
     magnitude_threshold: 0.05
-    gamma: 0.5
+    gamma: 0.1
 
 validate:
   data_loader:
