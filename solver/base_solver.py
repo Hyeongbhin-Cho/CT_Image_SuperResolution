@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, ReduceLROnPlateau, CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader
 import logging
 import pandas as pd
@@ -81,7 +81,8 @@ class BaseSolver(ABC):
         scheduler_map = {
             'step': StepLR,
             'cosine': CosineAnnealingLR,
-            'plateau': ReduceLROnPlateau
+            'plateau': ReduceLROnPlateau,
+            'cosine_restart': CosineAnnealingWarmRestarts
         }
 
         scheduler_config = config['train'].get('scheduler', {})

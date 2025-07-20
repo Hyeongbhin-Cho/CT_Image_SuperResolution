@@ -1,19 +1,20 @@
 # config/edge_cnn.yaml
 
 network:
-  type: red_cnn
+  type: unet
 
 train: 
-  lr: 1.0e-5
+  lr: 1.0e-4
   num_epochs: 10
   criterion: mse
   optimizer:
     type: adam
     weight_decay: 1.0e-6
   scheduler:
-    type: step
-    step_size: 10
-    gamma: 0.75
+    type: cosine_restart
+    T_0: 10
+    T_mult: 2
+    eta_min: 1.0e-7
   earlystopping:
     enabled: true
     patience: 10

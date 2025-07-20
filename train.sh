@@ -6,4 +6,4 @@ python main.py \
     --save_path "save" \
     --result_fig \
     --workframe edge_cnn \
-    --version 1.5
+    --version 2.2
