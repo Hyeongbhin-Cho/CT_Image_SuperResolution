@@ -120,6 +120,9 @@ class UNet(nn.Module):
         h = self.down_block4(h)
         r4 = h
         h = self.down_block5(h)
+        
+        # mid
+        h = self.conv_block2(h)
 
         # decoder
         h = self.up_block1(h)

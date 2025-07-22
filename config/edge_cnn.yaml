@@ -1,7 +1,7 @@
 # config/edge_cnn.yaml
 
 network:
-  type: unet
+  type: red_cnn
 
 train: 
   lr: 1.0e-4

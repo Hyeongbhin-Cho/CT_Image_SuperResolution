@@ -9,6 +9,7 @@ import logging
 from tqdm import tqdm
 import numpy as np
 import cv2
+from time import time, strftime, gmtime
 
 from .base_solver import BaseSolver
 from utils.measure import compute_measure
@@ -214,6 +215,7 @@ class EdgeCNNSolver(BaseSolver):
     
     def evaluate(self):
         assert self.eval_loader is not None, "EdgeCNNSolver need eval loader. EdgeCNNSolver(..., eval_loader=<here>)"
+        start_time = time()
         self.load_model(self.load_path)
         self.model.eval()
         
@@ -248,12 +250,18 @@ class EdgeCNNSolver(BaseSolver):
             
             iters += 1
         
+        end_time = time()
+        elapsed = end_time - start_time
+        formatted = strftime("%H:%M:%S", gmtime(elapsed))
+        milliseconds = int((elapsed - int(elapsed)) * 1000)
+        
         eval_loss_avg = eval_loss_total / iters
         x_measure_avg = {k: x_measure_total[k] / iters for k in self.metrics}
         pred_measure_avg = {k: pred_measure_total[k] / iters for k in self.metrics}
         
+        
         # Eval Logger
-        log = f"[Eval] Loss: {eval_loss_avg:.6f}"
+        log = f"[Eval] Loss: {eval_loss_avg:.6f} Time: {formatted}.{milliseconds}"
         log += " [LR]"
         for k, v in x_measure_avg.items():
             log += f" {k.upper()}: {v:.4f}"

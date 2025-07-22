@@ -4,7 +4,7 @@ python main.py \
     --mode eval \
     --data_path "./../Datasets/CT_SR" \
     --save_path "save" \
-    --load_path "/mnt/d/Research/CT_SR/save/sr_cnn_ver1.0/latest.pt"\
+    --load_path "save/edge_cnn_ver1.5/best.pt"\
     --result_fig \
-    --workframe sr_cnn \
-    --version 1.0
+    --workframe edge_cnn \
+    --version 1.5
