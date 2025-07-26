@@ -2,182 +2,86 @@
 import torch
 import torch.nn as nn
 """
-Total params: 2,130,072
-Trainable params: 2,130,072
-Non-trainable params: 0
-
-
 Total params: 23,375,041
 Trainable params: 23,375,041
 Non-trainable params: 0
 """
 
-# Layer
-class Conv2d(nn.Module):
-    def __init__(self, nch_in, nch_out, kernel_size=4, stride=1, padding=1, bias=True):
-        super(Conv2d, self).__init__()
-        self.conv = nn.Conv2d(nch_in, nch_out, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
-
-    def forward(self, x):
-        return self.conv(x)
-
-
-class Norm2d(nn.Module):
-    def __init__(self, nch, norm_mode):
-        super(Norm2d, self).__init__()
-        if norm_mode == 'bnorm':
-            self.norm = nn.BatchNorm2d(nch)
-        elif norm_mode == 'inorm':
-            self.norm = nn.InstanceNorm2d(nch)
-
-    def forward(self, x):
-        return self.norm(x)
-    
-    
-class ReLU(nn.Module):
-    def __init__(self, relu):
-        super(ReLU, self).__init__()
-        if relu > 0:
-            self.relu = nn.LeakyReLU(relu, True)
-        elif relu == 0:
-            self.relu = nn.ReLU(True)
-
-    def forward(self, x):
-        return self.relu(x)
-
-
-class CNR2d(nn.Module):
-    def __init__(self, nch_in, nch_out, kernel_size=4, stride=1, padding=1, norm='bnorm', relu=0.0, drop=[], bias=[]):
-        super().__init__()
-
-        if bias == []:
-            if norm == 'bnorm':
-                bias = False
-            else:
-                bias = True
-
-        layers = []
-        layers += [Conv2d(nch_in, nch_out, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)]
-
-        if norm != []:
-            layers += [Norm2d(nch_out, norm)]
-
-        if relu != []:
-            layers += [ReLU(relu)]
-
-        if drop != []:
-            layers += [nn.Dropout2d(drop)]
-
-        self.cbr = nn.Sequential(*layers)
+# Block    
+class ConvBlock(nn.Module):
+    def __init__(self, c_in, c_out, kernel_size=3, num_groups=1):
+        super(ConvBlock, self).__init__()
+        self.conv1 = nn.Conv2d(c_in, c_out, kernel_size=kernel_size, padding=kernel_size//2, stride=1, bias=False)
+        self.norm = nn.GroupNorm(num_groups=num_groups, num_channels=c_out)
+        self.act = nn.SiLU()
         
     def forward(self, x):
-        return self.cbr(x)
-    
-    
-class Pooling2d(nn.Module):
-    def __init__(self, nch=[], pool=2, type='avg'):
-        super().__init__()
-
-        if type == 'avg':
-            self.pooling = nn.AvgPool2d(pool)
-        elif type == 'max':
-            self.pooling = nn.MaxPool2d(pool)
-        elif type == 'conv':
-            self.pooling = nn.Conv2d(nch, nch, kernel_size=pool, stride=pool)
-
-    def forward(self, x):
-        return self.pooling(x)
-    
-    
-class UnPooling2d(nn.Module):
-    def __init__(self, nch=[], pool=2, type='nearest'):
-        super().__init__()
-
-        if type == 'nearest':
-            self.unpooling = nn.Upsample(scale_factor=pool, mode='nearest')
-        elif type == 'bilinear':
-            self.unpooling = nn.Upsample(scale_factor=pool, mode='bilinear', align_corners=True)
-        elif type == 'conv':
-            self.unpooling = nn.ConvTranspose2d(nch, nch, kernel_size=pool, stride=pool)
-
-    def forward(self, x):
-        return self.unpooling(x)
-    
+        h = self.conv1(x)
+        h = self.norm(h)
+        h = self.act(h)
+        
+        return h    
         
 class UNet(nn.Module):
-    def __init__(self, nch_ker=64, norm='bnorm'):
+    def __init__(self, nch_ker=64):
         super(UNet, self).__init__()
 
         self.nch_in = 1
         self.nch_out = 1
         self.nch_ker = nch_ker
-        self.norm = norm
-
-        if norm == 'bnorm':
-            self.bias = False
-        else:
-            self.bias = True
 
         """
         Encoder part
         """
 
-        self.enc1_1 = CNR2d(1 * self.nch_in, 1 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.enc1_2 = CNR2d(1 * self.nch_ker, 1 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.enc1_1 = ConvBlock(1 * self.nch_in, 1 * self.nch_ker, kernel_size=3, num_groups=16)
+        self.enc1_2 = ConvBlock(1 * self.nch_ker, 1 * self.nch_ker, kernel_size=3, num_groups=16)
+    
+        self.pool1 = nn.AvgPool2d(2, 2)
 
-        self.pool1 = Pooling2d(pool=2, type='avg')
+        self.enc2_1 = ConvBlock(1 * self.nch_ker, 2 * self.nch_ker, kernel_size=3, num_groups=32)
+        self.enc2_2 = ConvBlock(2 * self.nch_ker, 2 * self.nch_ker, kernel_size=3, num_groups=32)
 
-        self.enc2_1 = CNR2d(1 * self.nch_ker, 2 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.enc2_2 = CNR2d(2 * self.nch_ker, 2 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.pool2 = nn.AvgPool2d(2, 2)
 
-        self.pool2 = Pooling2d(pool=2, type='avg')
+        self.enc3_1 = ConvBlock(2 * self.nch_ker, 4 * self.nch_ker, kernel_size=3, num_groups=64)
+        self.enc3_2 = ConvBlock(4 * self.nch_ker, 4 * self.nch_ker, kernel_size=3, num_groups=64)
 
-        self.enc3_1 = CNR2d(2 * self.nch_ker, 4 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.enc3_2 = CNR2d(4 * self.nch_ker, 4 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.pool3 = nn.AvgPool2d(2, 2)
 
-        self.pool3 = Pooling2d(pool=2, type='avg')
+        self.enc4_1 = ConvBlock(4 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, num_groups=128)
+        self.enc4_2 = ConvBlock(8 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, num_groups=128)
 
-        self.enc4_1 = CNR2d(4 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.enc4_2 = CNR2d(8 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.pool4 = nn.AvgPool2d(2, 2)
 
-        self.pool4 = Pooling2d(pool=2, type='avg')
-
-        self.enc5_1 = CNR2d(8 * self.nch_ker, 2 * 8 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.enc5_1 = ConvBlock(8 * self.nch_ker, 16 * self.nch_ker, kernel_size=3, num_groups=256)
 
         """
         Decoder part
         """
-        self.dec5_1 = CNR2d(16 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.dec5_1 = ConvBlock(16 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, num_groups=128)
 
-        # self.unpool4 = UnPooling2d(pool=2, type='nearest')
-        # self.unpool4 = UnPooling2d(pool=2, type='bilinear')
-        self.unpool4 = UnPooling2d(nch=8 * self.nch_ker, pool=2, type='conv')
+        self.unpool4 = nn.ConvTranspose2d(8 * self.nch_ker, 8 * self.nch_ker, kernel_size=2, stride=2)
 
-        self.dec4_2 = CNR2d(2 * 8 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.dec4_1 = CNR2d(8 * self.nch_ker,     4 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.dec4_2 = ConvBlock(16 * self.nch_ker, 8 * self.nch_ker, kernel_size=3, num_groups=128)
+        self.dec4_1 = ConvBlock(8 * self.nch_ker,  4 * self.nch_ker, kernel_size=3, num_groups=64)
 
-        # self.unpool3 = UnPooling2d(pool=2, type='nearest')
-        # self.unpool3 = UnPooling2d(pool=2, type='bilinear')
-        self.unpool3 = UnPooling2d(nch=4 * self.nch_ker, pool=2, type='conv')
+        self.unpool3 = nn.ConvTranspose2d(4 * self.nch_ker, 4 * self.nch_ker, kernel_size=2, stride=2)
 
-        self.dec3_2 = CNR2d(2 * 4 * self.nch_ker, 4 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.dec3_1 = CNR2d(4 * self.nch_ker,     2 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.dec3_2 = ConvBlock(8 * self.nch_ker, 4 * self.nch_ker, kernel_size=3, num_groups=64)
+        self.dec3_1 = ConvBlock(4 * self.nch_ker, 2 * self.nch_ker, kernel_size=3, num_groups=32)
 
-        # self.unpool2 = UnPooling2d(pool=2, type='nearest')
-        # self.unpool2 = UnPooling2d(pool=2, type='bilinear')
-        self.unpool2 = UnPooling2d(nch=2 * self.nch_ker, pool=2, type='conv')
+        self.unpool2 = nn.ConvTranspose2d(2 * self.nch_ker, 2 * self.nch_ker, kernel_size=2, stride=2)
 
-        self.dec2_2 = CNR2d(2 * 2 * self.nch_ker, 2 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.dec2_1 = CNR2d(2 * self.nch_ker,     1 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.dec2_2 = ConvBlock(4 * self.nch_ker, 2 * self.nch_ker, kernel_size=3, num_groups=32)
+        self.dec2_1 = ConvBlock(2 * self.nch_ker, 1 * self.nch_ker, kernel_size=3, num_groups=16)
 
-        # self.unpool1 = UnPooling2d(pool=2, type='nearest')
-        # self.unpool1 = UnPooling2d(pool=2, type='bilinear')
-        self.unpool1 = UnPooling2d(nch=1 * self.nch_ker, pool=2, type='conv')
+        self.unpool1 = nn.ConvTranspose2d(1 * self.nch_ker, 1 * self.nch_ker, kernel_size=2, stride=2)
 
-        self.dec1_2 = CNR2d(2 * 1 * self.nch_ker, 1 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
-        self.dec1_1 = CNR2d(1 * self.nch_ker,     1 * self.nch_ker, kernel_size=3, stride=1, norm=self.norm, relu=0.0)
+        self.dec1_2 = ConvBlock(2 * self.nch_ker, 1 * self.nch_ker, kernel_size=3, num_groups=16)
+        self.dec1_1 = ConvBlock(1 * self.nch_ker, 1 * self.nch_ker, kernel_size=3, num_groups=16)
 
-        self.fc = Conv2d(1 * self.nch_ker,        1 * self.nch_out, kernel_size=1, padding=0)
+        self.fc = nn.Conv2d(1 * self.nch_ker, 1 * self.nch_out, kernel_size=1, stride=1, padding=0)
 
     def forward(self, x):
 
@@ -221,6 +125,5 @@ class UNet(nn.Module):
         dec1 = self.dec1_1(self.dec1_2(cat1))
 
         x = self.fc(dec1)
-        # x = torch.sigmoid(x)
 
         return x
