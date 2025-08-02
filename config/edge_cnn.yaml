@@ -36,7 +36,7 @@ train:
       normalization:
         clip_min: -1024
         clip_max: 3071
-  save_iters: 20
+  save_iters: 5000
   val_iters: 20
   record_iters: 20
   metrics: [rmse, psnr, ssim]
@@ -46,6 +46,7 @@ train:
     gamma: 0.1
 
 validate:
+  mini_batchss: 25
   data_loader:
     batch_size: 4
     num_workers: 1

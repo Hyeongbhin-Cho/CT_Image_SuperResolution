@@ -1,0 +1,100 @@
+# config/fft_cnn.yaml
+
+network:
+  type: unet
+
+train: 
+  lr: 1.0e-4
+  num_epochs: 100
+  criterion: mse
+  optimizer:
+    type: adam
+    weight_decay: 1.0e-6
+  scheduler:
+    type: cosine_restart
+    T_0: 10
+    T_mult: 2
+    eta_min: 1.0e-10
+  earlystopping:
+    enabled: false
+    patience: 10
+    min_delta: 1.0e-3
+    metric: psnr
+    mode: max
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, randomcrop, randomflip, randomrotate90, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      randomcrop:
+        patch_size: 256
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+  save_iters: 5000
+  val_iters: 20
+  record_iters: 20
+  metrics: [rmse, psnr, ssim]
+  fft:
+    criterion: mse
+    gamma: 0.5
+    w_magnitude: 1.0
+    w_phase: 0.1
+
+validate:
+  mini_batchss: 25
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, randomcrop, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      randomcrop:
+        patch_size: 256
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+
+evaluate:
+  data_loader:
+    batch_size: 4
+    num_workers: 1
+    shuffle: true
+    transform:
+      type: [interpolation, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+  metrics: [rmse, psnr, ssim]
+
+visualize:
+  data_loader:
+    batch_size: 1
+    num_workers: 1
+    shuffle: false
+    transform:
+      type: [interpolation, hounsfieldunit, normalization, totensor]
+      interpolation:
+        scale: 4
+      hounsfieldunit:
+        water_coefficient: 0.0192
+      normalization:
+        clip_min: -1024
+        clip_max: 3071
+
+device:
+  type: cuda
+  multi_gpu: false

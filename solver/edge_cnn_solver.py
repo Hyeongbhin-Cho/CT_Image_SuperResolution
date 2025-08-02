@@ -1,4 +1,4 @@
-# solver/sr_cnn_solver.py
+# solver/edge_cnn_solver.py
 import os
 import torch
 import torch.nn as nn
@@ -56,6 +56,15 @@ class EdgeCNNSolver(BaseSolver):
             magnitude = torch.where(magnitude > self.magnitude_threshold, magnitude, 0)
         
         return magnitude
+    
+    def compute_loss(self, y, pred):
+        edge_pred = self.sobel_magnitude(pred)
+        edge_y = self.sobel_magnitude(y)
+                    
+        base_loss = self.criterion(pred, y)           
+        edge_loss = self.edge_criterion(edge_pred, edge_y) 
+        
+        return self.gamma * base_loss + (1 - self.gamma) * edge_loss
         
     def train(self):
         assert self.train_loader is not None, "EdgeCNNSolver need train loader. EdgeCNNSolver(..., train_loader=<here>)"
@@ -107,13 +116,7 @@ class EdgeCNNSolver(BaseSolver):
                     
                     pred = self.model(train_x)
                     
-                    edge_pred = self.sobel_magnitude(pred)
-                    edge_y = self.sobel_magnitude(train_y)
-                    
-                    base_loss = self.criterion(pred, train_y)           
-                    edge_loss = self.edge_criterion(edge_pred, edge_y) 
-                    
-                    loss = self.gamma * base_loss + (1 - self.gamma) * edge_loss
+                    loss = self.compute_loss(train_y, pred)
                     
                     self.optimizer.zero_grad()     
                     loss.backward()
@@ -166,7 +169,7 @@ class EdgeCNNSolver(BaseSolver):
         finally:
             self.terminate_solver()
         
-    def validate(self):
+    def validate(self, is_full=True):
         assert self.val_loader is not None, "EdgeCNNSolver need val loader. EdgeCNNSolver(..., val_loader=<here>)"
         self.model.eval()
         
@@ -174,19 +177,13 @@ class EdgeCNNSolver(BaseSolver):
         measure_total = {k: 0.0 for k in self.metrics}
         iters = 0
 
-        for data in self.val_loader:
+        for data in self.val_loader:  
             # To GPU
             val_x = data['lr'].to(self.device)
             val_y = data['hr'].to(self.device)
             pred = self.model(val_x)
             
-            edge_pred = self.sobel_magnitude(pred)
-            edge_y = self.sobel_magnitude(val_y)
-            
-            base_loss = self.criterion(pred, val_y)           
-            edge_loss = self.edge_criterion(edge_pred, edge_y) 
-            
-            loss = self.gamma * base_loss + (1 - self.gamma) * edge_loss
+            loss = self.compute_loss(val_y, pred)
         
             val_loss_total += loss.item()
                         
@@ -194,6 +191,10 @@ class EdgeCNNSolver(BaseSolver):
             measure_total = {k: measure_total[k] + measure[k] for k in self.metrics}
             
             iters += 1
+            
+            # Mini Batch
+            if (not is_full) and (self.mini_batches <= iters):
+                break
         
         val_loss_avg = val_loss_total / iters
         measure_avg = {k: measure_total[k]/iters for k in self.metrics}
@@ -232,13 +233,7 @@ class EdgeCNNSolver(BaseSolver):
             eval_y = data['hr'].to(self.device)
             pred = self.model(eval_x)
             
-            edge_pred = self.sobel_magnitude(pred)
-            edge_y = self.sobel_magnitude(eval_y)
-            
-            base_loss = self.criterion(pred, eval_y)           
-            edge_loss = self.edge_criterion(edge_pred, edge_y) 
-            
-            loss = self.gamma * base_loss + (1 - self.gamma) * edge_loss
+            loss = self.compute_loss(eval_y, pred)
 
             eval_loss_total += loss.item()
                         

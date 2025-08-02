@@ -40,6 +40,9 @@ class BaseSolver(ABC):
         self.save_iters = train_config.get('save_iters', 20)
         self.record_iters = train_config.get('record_iters', 20)
         self.metrics = train_config.get('metrics' , [])
+        
+        val_config = config['validate']
+        self.mini_batches = val_config.get('mini_batches', 0)
 
         # Record
         self.train_losses = []
