@@ -37,10 +37,34 @@ class FFTCNNSolver(BaseSolver):
         self.w_magnitude = fft_config.get('magnitude', 1.0)
         self.w_phase = fft_config.get('w_phase', 0.1)
         
+        self.edge_config = config["train"].get('edge', {})
+        self.magnitude_threshold = self.edge_config.get('magnitude_threshold', -1)
+        self.gamma = self.edge_config.get('gamma', 1.0)
+        self.edge_criterion =  criterion_map[self.edge_config.get('criterion', 'mse')]
+        
         print("FFT CNN solver is loaded")
         
     def fft2(self, data):
         return torch.fft.fft2(data, dim=(-2, -1), norm="ortho")
+    
+    def sobel_magnitude(self, data:torch.Tensor):
+        sobel_x = torch.tensor([[[[-1, 0, 1],
+                                  [-2, 0, 2],
+                                  [-1, 0, 1]]]], dtype=torch.float32).to(self.device)
+        
+        sobel_y = torch.tensor([[[[-1, -2, -1],
+                               [ 0,  0,  0],
+                               [ 1,  2,  1]]]], dtype=torch.float32).to(self.device)
+        
+        dx = F.conv2d(data, sobel_x, padding=1)
+        dy = F.conv2d(data, sobel_y, padding=1)
+        
+        magnitude = torch.sqrt(dx ** 2 + dy ** 2 + 1e-6)
+        
+        if self.magnitude_threshold > 0:
+            magnitude = torch.where(magnitude > self.magnitude_threshold, magnitude, 0)
+        
+        return magnitude
     
     def compute_loss(self, y, pred):
         freq_pred = self.fft2(pred)
@@ -49,10 +73,16 @@ class FFTCNNSolver(BaseSolver):
         mag_pred = torch.abs(freq_pred)
         mag_y = torch.abs(freq_y)
         
+        phase_pred = torch.angle(freq_pred)
+        phase_y = torch.angle(freq_y)
+        
         pixel_loss = self.criterion(pred, y)           
         mag_loss = self.fft_criterion(mag_pred, mag_y)
         
-        return self.gamma * pixel_loss + (1 - self.gamma) * (self.w_magnitude * mag_loss)
+        phase_diff = torch.cos(phase_pred - phase_y)
+        phase_loss = self.fft_criterion(phase_diff, torch.ones_like(phase_diff))
+        
+        return self.gamma * pixel_loss + (1 - self.gamma) * (self.w_magnitude * mag_loss + self.w_phase * phase_loss)
         
     def train(self):
         assert self.train_loader is not None, "FFTCNNSolver need train loader. FFTCNNSolver(..., train_loader=<here>)"
@@ -284,8 +314,21 @@ class FFTCNNSolver(BaseSolver):
             edge_x = self.sobel_magnitude(x) / 1.5
             edge_y = self.sobel_magnitude(y) / 1.5
             edge_pred = self.sobel_magnitude(pred) / 1.5
+            
+            fft_x = self.fft2(x)
+            fft_y = self.fft2(y)
+            fft_pred = self.fft2(pred)
+            
+            mag_x = torch.log(torch.abs(fft_x) + 1)
+            mag_y = torch.log(torch.abs(fft_y) + 1)
+            mag_pred = torch.log(torch.abs(fft_pred) + 1)
+            
+            phase_x = torch.angle(fft_x) / (2 *torch.pi) + 0.5
+            phase_y = torch.angle(fft_y) / (2 *torch.pi) + 0.5
+            phase_pred = torch.angle(fft_pred) / (2 *torch.pi) + 0.5
 
-            for name, img_tensor in zip(["LR", "HR", "SR", "LR_edge", "HR_edge", "SR_edge"], [x[0], y[0], pred[0], edge_x[0], edge_y[0], edge_pred[0]]):
+            for name, img_tensor in zip(["LR", "HR", "SR", "LR_edge", "HR_edge", "SR_edge", "LR_mag", "HR_mag", "SR_mag", "LR_phase", "HR_phase", "SR_phase"],
+                                        [x[0], y[0], pred[0], edge_x[0], edge_y[0], edge_pred[0], mag_x[0], mag_y[0], mag_pred[0], phase_x[0], phase_y[0], phase_pred[0]]):
                 img = img_tensor.detach().cpu().numpy()
                 img = np.transpose(img, (1, 2, 0))
                 img = np.clip(img, 0, 1)

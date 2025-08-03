@@ -45,6 +45,10 @@ train:
     gamma: 0.5
     w_magnitude: 1.0
     w_phase: 0.1
+  edge:
+    criterion: mse
+    magnitude_threshold: 0.05
+    gamma: 0.5
 
 validate:
   mini_batchss: 25
