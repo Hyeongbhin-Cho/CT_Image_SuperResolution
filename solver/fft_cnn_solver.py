@@ -32,14 +32,13 @@ class FFTCNNSolver(BaseSolver):
         }
         
         fft_config = config["train"].get('fft', {})
-        self.gamma = fft_config.get('gamma', 1.0)
         self.fft_criterion =  criterion_map[fft_config.get('criterion', 'mse')]
-        self.w_magnitude = fft_config.get('magnitude', 1.0)
-        self.w_phase = fft_config.get('w_phase', 0.1)
+        self.gamma_magnitude = fft_config.get('gamma_magnitude', 1.0)
+        self.gamma_phase = fft_config.get('gamma_phase', 0.1)
         
         self.edge_config = config["train"].get('edge', {})
         self.magnitude_threshold = self.edge_config.get('magnitude_threshold', -1)
-        self.gamma = self.edge_config.get('gamma', 1.0)
+        self.gamma_edge = self.edge_config.get('gamma_edge', 1.0)
         self.edge_criterion =  criterion_map[self.edge_config.get('criterion', 'mse')]
         
         print("FFT CNN solver is loaded")
@@ -82,7 +81,7 @@ class FFTCNNSolver(BaseSolver):
         phase_diff = torch.cos(phase_pred - phase_y)
         phase_loss = self.fft_criterion(phase_diff, torch.ones_like(phase_diff))
         
-        return self.gamma * pixel_loss + (1 - self.gamma) * (self.w_magnitude * mag_loss + self.w_phase * phase_loss)
+        return self.gamma_pixel * pixel_loss + self.gamma_magnitude * mag_loss + self.gamma_phase * phase_loss
         
     def train(self):
         assert self.train_loader is not None, "FFTCNNSolver need train loader. FFTCNNSolver(..., train_loader=<here>)"

@@ -7,6 +7,7 @@ train:
   lr: 1.0e-4
   num_epochs: 100
   criterion: mse
+  gamma_pixel: 1.0
   optimizer:
     type: adam
     weight_decay: 1.0e-6
@@ -14,7 +15,7 @@ train:
     type: cosine_restart
     T_0: 10
     T_mult: 2
-    eta_min: 1.0e-10
+    eta_min: 1.0e-13
   earlystopping:
     enabled: false
     patience: 10
@@ -42,13 +43,12 @@ train:
   metrics: [rmse, psnr, ssim]
   fft:
     criterion: mse
-    gamma: 0.5
-    w_magnitude: 1.0
-    w_phase: 0.1
+    gamma_magnitude: 1.0
+    gamma_phase: 0.1
   edge:
     criterion: mse
     magnitude_threshold: 0.05
-    gamma: 0.5
+    gamma_edge: 0.5
 
 validate:
   mini_batchss: 25

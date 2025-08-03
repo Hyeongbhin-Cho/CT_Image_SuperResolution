@@ -65,7 +65,8 @@ class BaseSolver(ABC):
             'mse': nn.MSELoss(),
             'l1': nn.L1Loss()
         }
-        self.criterion = criterion_map[config['train'].get('criterion', 'mse')]
+        self.criterion = criterion_map[train_config.get('criterion', 'mse')]
+        self.gamma_pixel = train_config.get('gamma_pixel', 1.0)
 
         # Optimizer
         optimizer_map = {
@@ -73,9 +74,11 @@ class BaseSolver(ABC):
             'adamw': optim.AdamW,
             'sgd': optim.SGD
         }
-        lr = config['train']['lr']
-        optimizer_type = config['train']['optimizer'].get('type', 'adam')
-        weight_decay = config['train']['optimizer'].get('weight_decay', 1e-6)
+        lr = train_config.get('lr', 1e-4)
+        optimizer_config = train_config.get('optimizer', {})
+        
+        optimizer_type = optimizer_config.get('type', 'adam')
+        weight_decay = optimizer_config.get('weight_decay', 1e-6)
         self.optimizer = optimizer_map[optimizer_type](self.model.parameters(),
                                                        lr=lr,
                                                        weight_decay=weight_decay)
@@ -88,7 +91,7 @@ class BaseSolver(ABC):
             'cosine_restart': CosineAnnealingWarmRestarts
         }
 
-        scheduler_config = config['train'].get('scheduler', {})
+        scheduler_config = train_config.get('scheduler', {})
         scheduler_type = scheduler_config.get('type', None)
 
         if scheduler_type:
@@ -99,7 +102,7 @@ class BaseSolver(ABC):
             self.scheduler = None
         
         # Early Stopping
-        earlystopping_configs = config['train'].get('earlystopping', {})
+        earlystopping_configs = train_config.get('earlystopping', {})
         self.earlystopping_mode = earlystopping_configs.get('mode', 'min')
         self.best_value = float('inf') if self.earlystopping_mode =='min' else -float('inf')
   
@@ -110,8 +113,6 @@ class BaseSolver(ABC):
         self.earlystopping_metric = earlystopping_configs.get('metric', 'loss')
         if self.earlystopping_metric != 'loss' and self.earlystopping_metric not in self.metrics:
             raise ValueError(f"Metric '{self.earlystopping_metric}' not found in validation metrics")
-        
-        
         
         
     def save_model(self, filename: str=None):
