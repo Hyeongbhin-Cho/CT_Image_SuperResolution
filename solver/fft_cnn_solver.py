@@ -314,9 +314,9 @@ class FFTCNNSolver(BaseSolver):
             edge_y = self.sobel_magnitude(y) / 1.5
             edge_pred = self.sobel_magnitude(pred) / 1.5
             
-            fft_x = self.fft2(x)
-            fft_y = self.fft2(y)
-            fft_pred = self.fft2(pred)
+            fft_x = torch.fft.fftshift(self.fft2(x))
+            fft_y = torch.fft.fftshift(self.fft2(y))
+            fft_pred = torch.fft.fftshift(self.fft2(pred))
             
             mag_x = torch.log(torch.abs(fft_x) + 1)
             mag_y = torch.log(torch.abs(fft_y) + 1)
