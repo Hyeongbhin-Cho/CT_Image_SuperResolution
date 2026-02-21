@@ -42,3 +42,13 @@ The project is designed to be executed via simple bash scripts for reproducibili
 To train the selected model and solver:
 ```bash
 bash train.sh
+
+### Evaluation
+To perform inference and evaluate model performance (PSNR/SSIM) on a test set:
+```bash
+bash evaluate.sh
+
+### visualization
+To visualize and compare the super-resolution results against the input and ground truth:
+```bash
+bash visualize.sh
